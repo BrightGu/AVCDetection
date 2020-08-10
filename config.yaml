@@ -1,0 +1,26 @@
+train_set_path : 'train_set.pkl'
+test_set_path : 'test_set.pkl'
+store_model_dir : ''
+evaluate_path : 'record.txt'
+
+
+trian:
+    save_steps : 2
+    iters: 100
+    load_model_num : 0
+    load_model : True
+
+
+logger:
+    logger_dir : ''
+    tag : 'init'
+optimizer:
+    lr: 0.0035
+    beta1: 0.9
+    beta2: 0.999
+    amsgrad: True
+    weight_decay: 0.0003
+    grad_norm: 20
+
+loss:
+    margin: 700

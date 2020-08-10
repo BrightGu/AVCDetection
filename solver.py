@@ -1,77 +1,84 @@
-import pickle
-import torch
-import numpy as np
-import sys
-import os
+from  os.path import join,basename
 import torch.nn as nn
-import torch.nn.functional as F
 import yaml
-import pickle
-from model.crossmodel import CrossModel
-from model.utils import *
-from functools import reduce
+from crossmodel import CrossModel
+from utils import *
 from collections import defaultdict
-from evaluate.count_metrics import calculate_metrics
+from count_metrics import calculate_metrics
 import random
 
 class Solver(object):
-    def __init__(self, config, args):
+    def __init__(self, config):
         # config store the value of hyperparameters, turn to attr by AttrDict
         self.config = config
         print(config)
 
-        # args store other information
-        self.args = args
-        print(self.args)
 
+        # file path
+        self.train_set_path = self.config['train_set_path']
+        self.test_set_path = self.config['test_set_path']
+        self.store_model_dir = self.config['store_model_dir']
+        self.evaluate_path = self.config['evaluate_path']
+        # train set
+        self.save_steps = self.config['train']['save_steps']
+        self.load_model_num = self.config['train']['load_model_num']
+        self.load_model = self.config['train']['load_model']
+        self.iters = self.config['train']['iters']
         # logger to use tensorboard
-        self.logger = Logger(self.args.logdir)
+        self.logger = Logger(self.config['logger']['logger_dir'])
+        self.tag = self.config['logger']['tag']
+        # loss
+        self.margin = self.config['loss']['margin']
+        # optimizer
+        self.lr = self.config['optimizer']['lr']
+        self.beta1 = self.config['optimizer']['beta1']
+        self.beta2 = self.config['optimizer']['beta2']
+        self.amsgrad = self.config['optimizer']['amsgrad']
+        self.weight_decay = self.config['optimizer']['weight_decay']
+        self.grad_norm = self.config['optimizer']['grad_norm']
 
         # get dataloader
-        self.data=load_data(self.args.train_set_path,self.args.data_key)
-        self.test_data=load_data(self.args.test_set_path,self.args.test_data_key)
-        #self.margin=self.config['loss']['margin']
+        # key of high/low set
+        train_data_key=basename(self.train_set_path[:-4]) # train_high or train_low
+        self.data=load_data(self.train_set_path,train_data_key)
+        test_data_key = basename(self.test_data_key[:-4])  # test_high or test_low
+        self.test_data=load_data(self.test_set_path,test_data_key)
+
         # init the model with config
         self.build_model()
-
         self.save_config()
-
-        if self.args.load_model:
-            self.load_model_num = self.args.load_model_num
-            self.load_model(self.args.load_model_num)
+        # load model
+        if self.load_model:
+            self.load_model(self.load_model_num)
         else:
             self.load_model_num=0
 
     def build_model(self):
-        # create model, discriminator, optimizers
+        # create model, optimizers
         self.model = cc(CrossModel(self.config))
         print(self.model)
         #optimizer = self.config['optimizer']
         self.opt = torch.optim.Adam(self.model.parameters(),
-                lr=self.args.lr, betas=(self.args.beta1, self.args.beta2),
-                amsgrad=self.args.amsgrad, weight_decay=self.args.weight_decay)
+                lr=self.lr, betas=(self.beta1, self.beta2),
+                amsgrad=self.amsgrad, weight_decay=self.weight_decay)
         print(self.opt)
         return
 
     def load_model(self,iteration):
-        #path=self.args.store_model_path + '/model_' + f'{iteration}'
-        path=os.path.join(self.args.store_model_path,'model_' + f'{iteration}')
+        path=join(self.store_model_dir,'model_' + f'{iteration}')
         print(f'Load model from {path}')
         self.model.load_state_dict(torch.load(f'{path}.ckpt'))
         self.opt.load_state_dict(torch.load(f'{path}.opt'))
         return
 
     def save_config(self):
-        with open(f'{self.args.store_model_path}.config.yaml', 'w') as f:
+        with open(f'{self.store_model_dir}.config.yaml', 'w') as f:
             yaml.dump(self.config, f)
-        with open(f'{self.args.store_model_path}.args.yaml', 'w') as f:
-            yaml.dump(vars(self.args), f)
         return
 
     def save_model(self, iteration):
-        # save model and discriminator and their optimizer
-        #path = self.args.store_model_path + '/model_' + f'{iteration}'
-        path = os.path.join(self.args.store_model_path, 'model_' + f'{iteration}')
+        # save model and optimizer
+        path = join(self.store_model_dir, 'model_' + f'{iteration}')
         torch.save(self.model.state_dict(), f'{path}.ckpt')
         torch.save(self.opt.state_dict(), f'{path}.opt')
 
@@ -118,7 +125,7 @@ class Solver(object):
         print("label:"+item[0]+"  loss:"+str(loss))
         loss.backward(torch.ones_like(loss))
         grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(),
-                max_norm=self.args.grad_norm)
+                max_norm=self.grad_norm)
         self.opt.step()
         #use for auc
         distance = self.cal_distance(video_emb, audio_emb)
@@ -139,17 +146,17 @@ class Solver(object):
         distance = self.cal_distance(video_emb, audio_emb)
         return distance.item()
 
-    def train(self, n_iterations):
+
+    def train(self):
         start_iterations = self.load_model_num
-        for iteration in range(start_iterations,n_iterations):
-            #self.data.shuffle()
+        for iteration in range(start_iterations,self.iters):
             random.shuffle(self.data)
             real_clip_distance_map=defaultdict(lambda: [])
             fake_clip_distance_map=defaultdict(lambda: [])
             meta={}
             for item in self.data:
                 label=item[0]
-                metagu = self.ae_step(item,self.args.margin)
+                metagu = self.ae_step(item,self.margin)
                 meta=metagu
                 if 'real' in label:
                     real_clip_distance_map[label].append(meta['distance'])
@@ -157,21 +164,20 @@ class Solver(object):
                     fake_clip_distance_map[label].append(meta['distance'])
                 else:
                     assert 1==0
-            #calculate auc
-            if iteration % self.args.save_steps == 0 or iteration + 1 == n_iterations:
-                #计算AUC
-                clip_auc=calculate_metrics(real_clip_distance_map,fake_clip_distance_map,'train',iteration,self.args.auc_path)
-                line='iteration:'+str(iteration)+" "+"clip_auc:"+str(clip_auc)
+            # calculate metrics
+            if iteration % self.save_steps == 0 or iteration + 1 == self.iters:
+                clip_auc=calculate_metrics(real_clip_distance_map,fake_clip_distance_map,'train',iteration,self.evaluate_path)
+                line = 'iteration:'+str(iteration)+' '+'clip_auc:'+str(clip_auc)
                 print(line)
                 self.save_model(iteration=iteration)
-                self.logger.scalars_summary(f'{self.args.tag}/ae_train', meta, iteration)
+                self.logger.scalars_summary(f'{self.tag}/ae_train', meta, iteration)
                 loss = meta['loss']
-                print(f'AE:[{iteration + 1}/{n_iterations}], loss={loss:.2f}')
+                print(f'AE:[{iteration + 1}/{self.iters}], loss={loss:.2f}')
 
                 # test_set evaluation
                 test_real_clip_distance_map = defaultdict(lambda: [])
                 test_fake_clip_distance_map = defaultdict(lambda: [])
-                for item in self.test_data:
+                for item in self.test_data[:len(self.test_data)//10]:
                     label = item[0]
                     distance = self.test_evaluation(item)
                     if 'real' in label:
@@ -181,7 +187,7 @@ class Solver(object):
                     else:
                         assert 1 == 0
                 test_clip_auc = calculate_metrics(test_real_clip_distance_map, test_fake_clip_distance_map, 'test',
-                                              iteration, self.args.auc_path)
+                                              iteration, self.evaluate_path)
                 line = 'test_iteration:' + str(iteration) + " " + "test_clip_auc:" + str(test_clip_auc)
                 print(line)
 
@@ -199,7 +205,7 @@ class Solver(object):
             else:
                 assert 1 == 0
         test_clip_auc = calculate_metrics(test_real_clip_distance_map, test_fake_clip_distance_map, 'test',
-                                      0, self.args.auc_path)
+                                      0, self.evaluate_path)
         line = 'test_iteration:' + str(0) + " " + "test_clip_auc:" + str(test_clip_auc)
         print(line)
 
