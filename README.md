@@ -11,10 +11,9 @@ This is the implementation of the paper **Deepfake Video Detection Using Audio-V
 
 # Preprocess
 ## dataset
- * [VidTIMIT](http://conradsanderson.id.au/vidtimit/#downloads)
- * [DeepfakeTIMIT](https://www.idiap.ch/dataset/deepfaketimit)
+We evaluate proposed method on [VidTIMIT](http://conradsanderson.id.au/vidtimit/#downloads) and [DeepfakeTIMIT](https://www.idiap.ch/dataset/deepfaketimit) where synchronous audio-visual pairs are produced from VidTIMIT and asynchronous pairs from DeepfakeTIMIT. Videos in DeepfakeTIMIT are derived from VidTIMIT with faces swapped using the open source GAN-based approach, and transcripts in speeches are from [TIMIT corups](http://academictorrents.com/details/34e2b78745138186976cbc27939b1b34d18bd5b3).
 ## phoneme alignment
-we have audio aligned by using a phoneme-based alignment tool [P2FA](https://babel.ling.upenn.edu/phonetics/old_website_2015/p2fa/index.html). See this [blog](https://blog.csdn.net/jojozhangju/article/details/51951622) post for details on how to use it. The phoneme_info.txt has provided here.
+We have audio aligned by using a phoneme-based alignment tool [P2FA](https://babel.ling.upenn.edu/phonetics/old_website_2015/p2fa/index.html). See this [blog](https://blog.csdn.net/jojozhangju/article/details/51951622) post for details on how to use it. The phoneme_info.txt has provided here.
 ## audio features
 We use mel-scale spectrograms as audio features. In our experiments, mel-scale spectrograms are computed from a power spectrum (power of magnitude of 2048-sized STFT) on 40-ms windows length which result in  512-dimensional vectors.
 > python prepare_audio_feature.py -c config.yaml
