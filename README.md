@@ -24,6 +24,8 @@ In this section, we produce audio-visual pairs based on phoneme alignment infoma
 # AVCM
 We propose AVCM, which is a CNN model consists of audio architecture and video architecture. AVCM is employed to measure similarity of audio-visual pairs. The details of AVCM are described in Fig.1.
 
+![Image text](https://github.com/BrightGu/AVCDetection/blob/master/figure/AVCM%20architecture.png)
+
 # train
 
 # infer
