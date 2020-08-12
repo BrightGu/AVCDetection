@@ -26,6 +26,6 @@ We propose AVCM, which is a CNN model consists of audio architecture and video a
 
 ![Image text](https://github.com/BrightGu/AVCDetection/blob/master/figure/AVCM%20architecture.png)
 
-# train
+# train or infer
+python main.py -c config.yaml
 
-# infer
