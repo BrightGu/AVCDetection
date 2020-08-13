@@ -13,7 +13,6 @@ class Solver(object):
         self.config = config
         print(config)
 
-
         # file path
         self.train_set_path = self.config['train_set_path']
         self.test_set_path = self.config['test_set_path']
@@ -21,8 +20,8 @@ class Solver(object):
         self.evaluate_path = self.config['evaluate_path']
         # train set
         self.save_steps = self.config['train']['save_steps']
-        self.load_model_num = self.config['train']['load_model_num']
-        self.load_model = self.config['train']['load_model']
+        self.loaded_model_num = self.config['train']['loaded_model_num']
+        self.loaded_model = self.config['train']['loaded_model']
         self.iters = self.config['train']['iters']
         # logger to use tensorboard
         self.logger = Logger(self.config['logger']['logger_dir'])
@@ -41,17 +40,17 @@ class Solver(object):
         # key of high/low set
         train_data_key=basename(self.train_set_path[:-4]) # train_high or train_low
         self.data=load_data(self.train_set_path,train_data_key)
-        test_data_key = basename(self.test_data_key[:-4])  # test_high or test_low
+        test_data_key = basename(self.test_set_path[:-4])  # test_high or test_low
         self.test_data=load_data(self.test_set_path,test_data_key)
 
         # init the model with config
         self.build_model()
         self.save_config()
         # load model
-        if self.load_model:
-            self.load_model(self.load_model_num)
+        if self.loaded_model:
+            self.load_model(self.loaded_model_num)
         else:
-            self.load_model_num=0
+            self.loaded_model_num=0
 
     def build_model(self):
         # create model, optimizers
@@ -72,7 +71,8 @@ class Solver(object):
         return
 
     def save_config(self):
-        with open(f'{self.store_model_dir}.config.yaml', 'w') as f:
+        #with open(f'{self.store_model_dir}.config.yaml', 'w') as f:
+        with open(join(self.store_model_dir,'config.yaml'), 'w') as f:
             yaml.dump(self.config, f)
         return
 
@@ -100,7 +100,8 @@ class Solver(object):
         d3 = torch.sqrt(torch.sum(d1, 1))
         x=torch.zeros(d3.shape)
         y=margin - d3
-        d4 = torch.max(y.cuda(), x.cuda())
+        #d4 = torch.max(y.cuda(), x.cuda())
+        d4 = torch.max(cc(y), cc(x))
         d5 = torch.sum(torch.pow(d4, 2), 0)
         loss2 = d5 / batch_size / 2
         loss = label * loss1 + (1 - label) * loss2
@@ -122,7 +123,7 @@ class Solver(object):
         audio_emb,video_emb = self.model(audio_data,video_data)
         self.opt.zero_grad()
         loss = self.contrastive_margin_loss(video_emb, audio_emb, label, margin)
-        print("label:"+item[0]+"  loss:"+str(loss))
+        #print("label:"+item[0]+"  loss:"+str(loss))
         loss.backward(torch.ones_like(loss))
         grad_norm = torch.nn.utils.clip_grad_norm_(self.model.parameters(),
                 max_norm=self.grad_norm)
@@ -148,16 +149,15 @@ class Solver(object):
 
 
     def train(self):
-        start_iterations = self.load_model_num
+        start_iterations = self.loaded_model_num
         for iteration in range(start_iterations,self.iters):
             random.shuffle(self.data)
             real_clip_distance_map=defaultdict(lambda: [])
             fake_clip_distance_map=defaultdict(lambda: [])
             meta={}
-            for item in self.data:
+            for item in self.data[:15]:
                 label=item[0]
-                metagu = self.ae_step(item,self.margin)
-                meta=metagu
+                meta = self.ae_step(item,self.margin)
                 if 'real' in label:
                     real_clip_distance_map[label].append(meta['distance'])
                 elif 'fake' in label:
@@ -177,7 +177,9 @@ class Solver(object):
                 # test_set evaluation
                 test_real_clip_distance_map = defaultdict(lambda: [])
                 test_fake_clip_distance_map = defaultdict(lambda: [])
-                for item in self.test_data[:len(self.test_data)//10]:
+                #for item in self.test_data[:len(self.test_data)//10]:
+                random.shuffle(self.test_data)
+                for item in self.test_data[:18]:
                     label = item[0]
                     distance = self.test_evaluation(item)
                     if 'real' in label:

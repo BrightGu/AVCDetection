@@ -2,15 +2,15 @@ import os
 import cv2
 import pickle
 import numpy as np
-import sys
+import yaml
+from argparse import ArgumentParser
 
 test_set=['mwbt0','msjs1','mrgg0','mpgl0',
           'fram1','fjwb0','fjem0','felc0']
 
-def divideImage(image_file_root_list,phoneme_info_path,audio_feature_path,out_dir):
+def get_audio_visual_units(image_file_root_list,phoneme_info_path,audio_feature_path,out_dir):
     train_mean_high_image_list=[]
     train_mean_low_image_list=[]
-
     # map
     real_train_image_map = {}
     real_test_image_map={}
@@ -18,11 +18,10 @@ def divideImage(image_file_root_list,phoneme_info_path,audio_feature_path,out_di
     high_test_image_map = {}
     low_train_image_map = {}
     low_test_image_map = {}
-
     for image_file_root in image_file_root_list:
-        figure_ids=os.listdir(image_file_root).sort()
+        figure_ids = os.listdir(image_file_root)
+        figure_ids.sort()
         print(figure_ids)
-
         with open(phoneme_info_path,'r') as phoneme_info_file:
             #fadg0_sa1 SH 21 24 860.54 980.27 119.72789115700004
             for i,line in enumerate(phoneme_info_file):
@@ -53,7 +52,6 @@ def divideImage(image_file_root_list,phoneme_info_path,audio_feature_path,out_di
                     # <class 'tuple'>: (40, 64)
                     frame_gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
                     # calculate for mean and std
-
                     if figure_id not in test_set:
                         # real image
                         if image_file_root == image_file_root_list[0]:
@@ -65,7 +63,7 @@ def divideImage(image_file_root_list,phoneme_info_path,audio_feature_path,out_di
                         # low fake image
                         else:
                             train_mean_low_image_list.append(frame_gray)
-                phoneme_unit_list.append(frame_gray)
+                    phoneme_unit_list.append(frame_gray)
                 # train set or fake set
                 if figure_id in test_set:
                     # real image
@@ -79,16 +77,12 @@ def divideImage(image_file_root_list,phoneme_info_path,audio_feature_path,out_di
                         low_test_image_map[phoneme_unit_label]=phoneme_unit_list
                 else:
                     if image_file_root == image_file_root_list[0]:
-                        train_mean_high_image_list.append(phoneme_unit_list)
-                        train_mean_low_image_list.append(phoneme_unit_list)
                         real_train_image_map[phoneme_unit_label] = phoneme_unit_list
                     # high fake image
                     elif image_file_root == image_file_root_list[1]:
-                        train_mean_high_image_list.append(phoneme_unit_list)
                         high_train_image_map[phoneme_unit_label] = phoneme_unit_list
                     # low fake image
                     else:
-                        train_mean_low_image_list.append(phoneme_unit_list)
                         low_train_image_map[phoneme_unit_label] = phoneme_unit_list
             # mean and std
             high_mean = np.mean(train_mean_high_image_list, 0)
@@ -131,20 +125,25 @@ def divideImage(image_file_root_list,phoneme_info_path,audio_feature_path,out_di
                     pickle.dump(norm_data, f)
 
 if __name__=='__main__':
-    # # audio data
-    # real_image_dir = sys.argv[1]
-    # high_fake_image_dir = sys.argv[2]
-    # low_fake_image_dir = sys.argv[3]
-    # phoneme_info_path = sys.argv[4]
 
-    real_image_dir = r'D:\document\paper\personpaper\audio-visual_consistance\data\timit_mouth'
-    high_image_dir = r'D:\document\paper\personpaper\audio-visual_consistance\data\higher_quality_mouth'
-    low_image_dir = r'D:\document\paper\personpaper\audio-visual_consistance\data\lower_quality_mouth'
+    parser = ArgumentParser()
+    parser.add_argument('-config', '-c', default='config.yaml')
+    args = parser.parse_args()
+
+    # args.config = r'preprocess\preprocess_config.yaml'
+
+    # load config file
+    with open(args.config) as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+
+    real_image_dir = config['image']['real_image_dir']
+    high_image_dir = config['image']['high_image_dir']
+    low_image_dir = config['image']['low_image_dir']
+    phoneme_info_path = config['image']['phoneme_info_path']
+    audio_feature_path = config['image']['audio_feature_path']
+    out_dir = config['image']['feature_out_dir']
 
     image_file_root_list = [real_image_dir,high_image_dir,low_image_dir]
-    phoneme_info_path = r'D:\document\pycharmproject\AVCDetection\preprocess\phoneme_video_model_file.txt'
-    audio_feature_path=r''
-    out_dir = r'D:\document\pycharmproject\AVCDetection\output'
 
-    divideImage(image_file_root_list, phoneme_info_path,audio_feature_path,out_dir)
+    get_audio_visual_units(image_file_root_list, phoneme_info_path,audio_feature_path,out_dir)
 

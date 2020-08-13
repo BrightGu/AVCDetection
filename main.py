@@ -10,12 +10,14 @@ if __name__ == '__main__':
     parser.add_argument('-config', '-c', default='config.yaml')
     args = parser.parse_args()
 
+    args.config=r'D:\document\pycharmproject\AVCDetection\config.yaml'
+
     # load config file
     with open(args.config) as f:
         config = yaml.load(f,Loader=yaml.FullLoader)
 
     solver = Solver(config=config)
 
-    if args.iters > 0:
+    if config['train']['iters'] > 0:
         solver.train()
         #solver.infer()

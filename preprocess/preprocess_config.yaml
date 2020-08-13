@@ -1,0 +1,18 @@
+
+audio:
+  data_dir: 'timit_audio' # # original vidtimit audio dir
+  phoneme_info_path : 'preprocess\phoneme_info.txt' # phoneme alignment result file
+  out_dir : 'output' # audio feature file
+
+image:
+
+  origi_data_dir: 'timit_dir' # original vidtimit/deepfakeTIMIT images dir
+  mouth_output_dir: 'timit_mouth_dir' # captured mouth output
+  face_model_path: 'preprocess\image\facemodel\shape_predictor_68_face_landmarks.dat'  # face detecte model
+
+  real_image_dir : 'timit_mouth' # captured real mouth dir
+  high_image_dir : 'higher_quality_mouth' # captured high mouth dir
+  low_image_dir  : 'lower_quality_mouth' # captured low mouth dir
+  phoneme_info_path : 'preprocess\phoneme_info.txt' # phoneme alignment result file
+  audio_feature_path : 'audio_feature.pkl' # audio feature file
+  feature_out_dir : 'output' # audio-visual units output dir

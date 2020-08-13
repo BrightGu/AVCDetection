@@ -1,9 +1,8 @@
-import scipy.io.wavfile
+from argparse import ArgumentParser
 import os
 import math
-import sys
-#from python_speech_features import base
 import librosa
+import yaml
 import numpy as np
 import pickle
 from preprocess.tacotron.hyperparams import Hyperparams as hy
@@ -15,17 +14,6 @@ from preprocess.tacotron import utils
 test_set=['mwbt0','msjs1','mrgg0','mpgl0',
           'fram1','fjwb0','fjem0','felc0']
 
-# ./figure/word.wav
-# 292k 32000 1ch 512kbps
-
-
-# signal=[]
-# sample_rate=32000
-
-#total feature for mean and std
-
-
-
 def get_audio_mel(data_dir,phoneme_info_path,out_dir):
     audio_signal=[]
     loaded_audio_list=[]
@@ -34,20 +22,19 @@ def get_audio_mel(data_dir,phoneme_info_path,out_dir):
     with open(phoneme_info_path,'r') as phoneme_info_file:
         #fadg0_sa1 SH 21 24 860.544 980.27 119.72
         for i, line in enumerate(phoneme_info_file):
+            print(line)
             phoneme_info = line.strip().split()
             figure_id=phoneme_info[0].split("_")[0]
             word_id=phoneme_info[0].split("_")[1]
             phoneme_label=phoneme_info[1]
             # fadg0_sa1_SH_i
             phoneme_unit_label=phoneme_info[0]+"_"+phoneme_label+'_'+str(i)
-
             # The corresponding video frame
             start_frame = int(phoneme_info[2])
             end_frame = int(phoneme_info[3])
             # interval start and end time
             start_time = float(phoneme_info[4])
             end_time = float(phoneme_info[5])
-
             # audio tag
             audio_label=figure_id+'_'+word_id+'.wav'
             if audio_label not in loaded_audio_list:
@@ -56,7 +43,6 @@ def get_audio_mel(data_dir,phoneme_info_path,out_dir):
                 loaded_audio_list.append(audio_label)
 
             # clip segment with matching strategy
-
             phoneme_unit_mel_features=[]
             for index in range(start_frame, end_frame + 1):
                 if index == start_frame:
@@ -97,16 +83,19 @@ def get_audio_mel(data_dir,phoneme_info_path,out_dir):
 
 
 if  __name__  == '__main__':
-    # # audio data
-    # data_dir = sys.argv[1]
-    # # phoneme info
-    # phoneme_info_path = sys.argv[2]
-    # # std mean feature
-    # out_dir=sys.argv[3]
+    parser = ArgumentParser()
+    parser.add_argument('-config', '-c', default='config.yaml')
+    args = parser.parse_args()
 
-    data_dir=r'D:\document\paper\personpaper\audio-visual_consistance\data\timit_audio2'
-    phoneme_info_path=r'D:\document\pycharmproject\AVCDetection\preprocess\phoneme_video_model_file.txt'
-    out_dir=r'D:\document\pycharmproject\AVCDetection\output'
+    args.config = r'D:\document\pycharmproject\AVCDetection\preprocess\preprocess_config.yaml'
+
+    # load config file
+    with open(args.config) as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+
+    data_dir = config['audio']['data_dir']
+    phoneme_info_path = config['audio']['phoneme_info_path']
+    out_dir = config['audio']['out_dir']
 
 
     get_audio_mel(data_dir,phoneme_info_path,out_dir)

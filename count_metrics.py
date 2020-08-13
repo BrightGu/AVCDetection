@@ -4,8 +4,9 @@ from sklearn.metrics import roc_auc_score
 from collections import defaultdict
 import math
 
-graph_group_num=20
-threshold=1
+
+
+
 def print_list(in_list):
     line=''
     for item in in_list:
@@ -43,9 +44,12 @@ def compute_eer(target_scores, nontarget_scores):
     frr_10 = round(np.mean(frr[min_index_10]),2)
     return eer, thresholds[min_index],frr_10,far, thresholds
 
+# draw distribute table params, x num label,max_x
+graph_group_num = 20
+margin = 1
 def compute_far(far_list,thresholds_list,group_num):
     # compute_far for FAR curse
-    step=round(threshold/group_num,4)
+    step=round(margin/group_num,4)
     sample_far_list=[]
     sample_thresholds_list=[]
     for i in range(0,group_num):
@@ -60,8 +64,8 @@ def compute_far(far_list,thresholds_list,group_num):
 def compute_auc(real_distance_list,fake_distance_list):
     real_length = len(real_distance_list)
     fake_length = len(fake_distance_list)
-    print("real_len", real_length)
-    print("fake_len", fake_length)
+    # print("real_len", real_length)
+    # print("fake_len", fake_length)
     all_distances = np.concatenate((real_distance_list, fake_distance_list))
     labels = np.concatenate((np.ones(real_length), np.zeros(fake_length)))
     auc = roc_auc_score(labels, all_distances)
@@ -70,7 +74,7 @@ def compute_auc(real_distance_list,fake_distance_list):
 #0-1化处理,阈值也要进行01化处理
 def compute_distribution(real_distance_list,fake_distance_list,group_num):
     #分成
-    step=round(threshold/group_num,2)
+    step=round(margin/group_num,2)
     real_group_list=[0]*group_num
     fake_group_list=[0]*group_num
     for item in real_distance_list:
@@ -127,10 +131,10 @@ def calculate_metrics(real_clip_distance_map,fake_clip_distance_map,label,iterat
     video_min_point = min(min(real_video_distance_list), min(fake_video_distance_list))
     video_max_point = max(max(real_video_distance_list), max(fake_video_distance_list))+0.0001
 
-    real_clip_distance_list=[threshold*(i-clip_min_point)/(clip_max_point-clip_min_point) for i in real_clip_distance_list]
-    fake_clip_distance_list=[threshold*(i-clip_min_point)/(clip_max_point-clip_min_point) for i in fake_clip_distance_list]
-    real_video_distance_list = [threshold*(i - video_min_point) / (video_max_point - video_min_point) for i in real_video_distance_list]
-    fake_video_distance_list = [threshold*(i - video_min_point) / (video_max_point - video_min_point) for i in fake_video_distance_list]
+    real_clip_distance_list=[margin*(i-clip_min_point)/(clip_max_point-clip_min_point) for i in real_clip_distance_list]
+    fake_clip_distance_list=[margin*(i-clip_min_point)/(clip_max_point-clip_min_point) for i in fake_clip_distance_list]
+    real_video_distance_list = [margin*(i - video_min_point) / (video_max_point - video_min_point) for i in real_video_distance_list]
+    fake_video_distance_list = [margin*(i - video_min_point) / (video_max_point - video_min_point) for i in fake_video_distance_list]
 
     # ROC video
     clip_auc  = compute_auc(real_clip_distance_list, fake_clip_distance_list)

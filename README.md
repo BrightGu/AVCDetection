@@ -8,6 +8,7 @@ This is the implementation of the paper **Deepfake Video Detection Using Audio-V
  * librosa       0.7.2
  * opencv-python 4.3.0.36
  * numpy         1.19.1
+ * dlib         
 
 # Preprocess
 ## dataset
@@ -20,6 +21,7 @@ We use mel-scale spectrograms as audio features. In our experiments, mel-scale s
 > python prepare_audio_feature.py -c config.yaml
 ## audio-visual features
 In this section, we produce audio-visual pairs based on phoneme alignment infomation. Each mouth frame is related to a fixed-length audio segment, then sequential pairs with same phoneme labels are assembled into  specific phoneme units. The phoneme units are used for AVCM training.
+> python capture_mouth.py -c config.yaml
 > python prepare_image_feature.py -c config.yaml
 # AVCM
 We propose AVCM, which is a CNN model consists of audio architecture and video architecture. AVCM is employed to measure similarity of audio-visual pairs. The details of AVCM are described in Fig.1.

@@ -1,14 +1,14 @@
-train_set_path : 'train_set.pkl'
-test_set_path : 'test_set.pkl'
-store_model_dir : ''
-evaluate_path : 'record.txt'
+train_set_path : 'D:\document\paper\personpaper\audio-visual_consistance\data\train\train_high.pkl'
+test_set_path : 'D:\document\paper\personpaper\audio-visual_consistance\data\test\test_high.pkl'
+store_model_dir : 'D:\document\pycharmproject\AVCDetection\output'
+evaluate_path : 'D:\document\pycharmproject\AVCDetection\output\record.txt'
 
 
-trian:
-    save_steps : 2
+train :
+    save_steps : 1
     iters: 100
-    load_model_num : 0
-    load_model : True
+    loaded_model_num : 5
+    loaded_model : True
 
 
 logger:
