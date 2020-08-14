@@ -1,6 +1,7 @@
 import cv2
 import os
 import yaml
+import dlib
 from argparse import ArgumentParser
 
 def capture_mouth_region(data_dir,output_dir):
