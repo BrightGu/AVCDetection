@@ -8,6 +8,7 @@ This is the implementation of the paper **Deepfake Video Detection Using Audio-V
  * librosa       0.7.2
  * opencv-python 4.3.0.36
  * numpy         1.19.1
+ * dlib 19.7.0
 
 # Preprocess
 ## dataset
@@ -26,5 +27,5 @@ We propose AVCM, which is a CNN model consists of audio architecture and video a
 ![Image text](https://github.com/BrightGu/AVCDetection/blob/master/figure/AVCM%20architecture.png)
 
 # train or infer
-python main.py -c config.yaml
+> python main.py -c config.yaml
 
