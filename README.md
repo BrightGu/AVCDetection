@@ -17,10 +17,10 @@ We evaluate proposed method on [VidTIMIT](http://conradsanderson.id.au/vidtimit/
 We have audio aligned by using a phoneme-based alignment tool [P2FA](https://babel.ling.upenn.edu/phonetics/old_website_2015/p2fa/index.html). See this [blog](https://blog.csdn.net/jojozhangju/article/details/51951622) post for details on how to use it. The phoneme alignment information has provided [here](https://github.com/BrightGu/AVCDetection/blob/master/preprocess/phoneme_video_model_file.txt).
 ## audio features
 We use mel-scale spectrograms as audio features. In our experiments, mel-scale spectrograms are computed from a power spectrum (power of magnitude of 2048-sized STFT) on 40-ms windows length which result in  512-dimensional vectors.
-> python capture_mouth.py -c config.yaml
 > python prepare_audio_feature.py -c config.yaml
 ## audio-visual features
 In this section, we produce audio-visual pairs based on phoneme alignment infomation. Each mouth frame is related to a fixed-length audio segment, then sequential pairs with same phoneme labels are assembled into  specific phoneme units. The phoneme units are used for AVCM training.
+> python capture_mouth.py -c config.yaml
 > python prepare_image_feature.py -c config.yaml
 # AVCM
 We propose AVCM, which is a CNN model consists of audio architecture and video architecture. AVCM is employed to measure similarity of audio-visual pairs. The details of AVCM are described as follow.
